@@ -26,4 +26,13 @@ await log.setup({
 const Logger = log.getLogger();
 console.log(`logfile: ${filename}`);
 
+export function getCurrentLineNumber(error: Error): string {
+  const stack = error.stack;
+  if (stack != null) {
+    const lineNumber = stack.split("\n")[1].split(":").reverse()[1];
+    return lineNumber;
+  }
+  return "-";
+}
+
 export { Logger };

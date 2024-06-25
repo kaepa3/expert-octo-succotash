@@ -28,14 +28,128 @@ class TableMaker {
     }
     return list;
   }
-  async waitAllPage(browse: Browser) {
+
+  async loginIfNeed(newPage: Page): Promise<boolean> {
+    const loginImg = await newPage.$$("img.ng-tns-c31-1");
+    for (const i of loginImg) {
+      const val = await i.evaluate((x) => x.getAttribute("alt"));
+      if ("ログインしてくじをひく" === val) {
+        Logger.info("login");
+        await i.click();
+        let flg = false;
+        await newPage.waitForSelector("button.button-red", {
+          visible: true,
+          timeout: 5000,
+        }).then(async () => {
+          const btn = await newPage.$("button.button-red");
+          if (btn != null) {
+            btn.click();
+            await wait(1);
+            await newPage.waitForSelector("#login_handle", {
+              visible: true,
+              timeout: 5000,
+            }).then(async () => {
+              const input = await newPage.$("#login_handle");
+              if (input != null) {
+                input.type(yahoo_mail);
+                await wait(1);
+                const div = await newPage.$(
+                  "div.ar-button_button_J2jv2.ar-button_medium_1i9SB.ar-button_normal_1m_gx.ar-button_fullwidth_19rcY",
+                );
+                if (div != null) {
+                  const btn = await div.$$("button");
+                  if (btn != null) {
+                    await btn[0].click();
+                    await newPage.waitForSelector("#password", {
+                      visible: true,
+                      timeout: 5000,
+                    }).then(async () => {
+                      await newPage.type("#password", yahoo_pass);
+                      const div = await newPage.$(
+                        "div.login.ar-button_button_J2jv2.ar-button_medium_1i9SB.ar-button_normal_1m_gx.ar-button_fullwidth_19rcY",
+                      );
+                      if (div != null) {
+                        const btn = await div.$$("button");
+                        if (btn != null) {
+                          await Promise.all([
+                            newPage.waitForNavigation(),
+                            await btn[0].click(),
+                          ]);
+                        }
+                      }
+                    });
+                    flg = true;
+                  }
+                }
+              }
+            }).catch((a) => {
+              Logger.error(a + "email error");
+            });
+          }
+        }).catch(() => {
+          Logger.error("search error");
+        });
+        return flg;
+      }
+    }
+    return true;
   }
+  async playSingle(main: ElementHandle): Promise<boolean> {
+    Logger.info("playsingle");
+    const kuji = await main.$("div.btn-kuji");
+    if (kuji != null) {
+      const btn = await kuji.$("img");
+      if (btn != null) {
+        const val = await btn.evaluate((x) => x.getAttribute("alt"));
+        if (val === "くじをひく") {
+          await btn.click();
+          return true;
+        } else if (val === "明日も参加してね") {
+          Logger.info("already gamed");
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  async playChoice(main: ElementHandle): Promise<boolean> {
+    Logger.info("playchoice");
+    const kuji = await main.$("div.kujidetail-main");
+    if (kuji != null) {
+      const btn = await kuji.$("img");
+      if (btn != null) {
+        const val = await btn.evaluate((x) => x.getAttribute("alt"));
+        if (val != null) {
+          Logger.info("already gamed");
+        } else {
+          await btn.click();
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async playGame(page: Page) {
+    await wait(2);
+    const main = await page.$("main.main");
+    if (main != null) {
+      if (!await this.playSingle(main)) {
+        if (!await this.playChoice(main)) {
+          Logger.error("not play:" + await page.title());
+        }
+      }
+    }
+  }
+
   async GetTables() {
     // main処理
     const launch_opt = {
       channel: "chrome",
       args: ["--lang=ja,en-US,en"], // デフォルトでは言語設定が英語なので日本語に変更
       headless: false,
+      ignoreDefaultArgs: ["--enable-automation"],
     };
     const browser = await puppeteer.launch(launch_opt);
     const page = (await browser.pages())[0];
@@ -54,29 +168,19 @@ class TableMaker {
         let newPage: Page = page;
         for (const p of await browser.pages()) {
           const title = await p.title();
-          Logger.info("check:" + title);
           if (list.indexOf(title) == -1) {
             newPage = p;
           }
         }
         if (newPage != null) {
-          if (!/SKEY=(.*?)(&|$)/.test(newPage.url())) {
-            Logger.info("login");
-            Logger.info(await newPage.title());
-            const loginImg = await newPage.$$("img.ng-tns-c31-1");
-            Logger.info(loginImg.length);
-            for (const i of loginImg) {
-              const val = await i.evaluate((x) => x.getAttribute("alt"));
-              Logger.info(val);
-              if ("ログインしてくじをひく" === val) {
-                await i.click();
-                break;
-              }
-            }
+          const flg = await this.loginIfNeed(newPage);
+          if (flg) {
+            Logger.info("playgame");
+            await this.playGame(newPage);
           }
-          Logger.info("playgame");
-          await wait(10);
           await newPage.close();
+          Logger.info("end game");
+          await wait(3);
         }
         wait(2);
       }
@@ -88,30 +192,6 @@ class TableMaker {
 
 // main処理
 const maker = new TableMaker();
-const tables = await maker.GetTables();
+await maker.GetTables();
 
-Logger.info(tables);
-/*
-const launch_opt = {
-  channel: "chrome",
-  args: ["--lang=ja,en-US,en"], // デフォルトでは言語設定が英語なので日本語に変更
-  headless: true,
-};
-const browser = await puppeteer.launch(launch_opt);
-const page = await browser.newPage();
-await page.emulate(puppeteer.devices["iPhone SE"]);
-for (const table of tables) {
-  for (const link of table.getElementsByTagName("a")) {
-    try {
-      //await playLot(page, link.getAttribute("href") || "");
-      Logger.info(link);
-      wait(1);
-    } catch (e) {
-      Logger.info("exception:" + page.url());
-      Logger.info(e);
-    }
-  }
-}
-browser.close();
-*/
 Logger.info("fin");
