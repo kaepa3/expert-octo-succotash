@@ -1,5 +1,3 @@
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.34-alpha/deno-dom-wasm.ts";
-import ky from "https://cdn.skypack.dev/ky@0.28.5?dts";
 import puppeteer, {
   Browser,
   ElementHandle,

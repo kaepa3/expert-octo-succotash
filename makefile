@@ -3,3 +3,5 @@ build: main.ts
 
 run: main.ts
 	PUPPETEER_PRODUCT=chrome deno run -A --unstable-byonm $?
+docker:
+	docker build -t vpointer ./
