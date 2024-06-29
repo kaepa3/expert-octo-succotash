@@ -60,50 +60,51 @@ class TableMaker {
                   if (btn != null) {
                     await btn[0].click();
                     //
-                    await newPage.waitForSelector("button.altMethodButton",{
+                    await newPage.waitForSelector("button.altMethodButton", {
                       visible: true,
-                      timeout: 5000
-                    }).then(async()=>{
+                      timeout: 5000,
+                    }).then(async () => {
                       const btn = await newPage.$("button.altMethodButton");
-                      if(btn !=null){
-                        const obj = await btn.getProperty('innerText');
-                        const text = await obj.jsonValue()
-                        if(text==="他の方法でログイン"){
-                          await btn.click()
-                          Logger.info("yatta")
-const otherMethodSelector= "div.ar-button_button_J2jv2.ar-button_small_1-WyF.ar-button_normal_1m_gx.ar-button_fullwidth_19rcY"
-await newPage.waitForSelector(otherMethodSelector,{
-  
-  visible: true,
-  timeout: 5000
-}).then(async ()=>{
-  const div = await newPage.$(otherMethodSelector)
-  const btn=await div.$("button")
-  const obj = await btn.getProperty('innerText');
-  const text = await obj.jsonValue()
-  if(text==="パスワード"){
-    Logger.info("kokoda")
-    await btn.click()
-  }
-});
-
-
-                        }
-                        else{
-                          Logger.info("inner:" + text)
+                      if (btn != null) {
+                        const obj = await btn.getProperty("innerText");
+                        const text = await obj.jsonValue();
+                        if (text === "他の方法でログイン") {
+                          await btn.click();
+                          Logger.info("yatta");
+                          const otherMethodSelector =
+                            "div.ar-button_button_J2jv2.ar-button_small_1-WyF.ar-button_normal_1m_gx.ar-button_fullwidth_19rcY";
+                          await newPage.waitForSelector(otherMethodSelector, {
+                            visible: true,
+                            timeout: 5000,
+                          }).then(async () => {
+                            const div = await newPage.$(otherMethodSelector);
+                            if (div != null) {
+                              const btn = await div.$("button");
+                              if (btn != null) {
+                                const obj = await btn.getProperty("innerText");
+                                const text = await obj.jsonValue();
+                                if (text === "パスワード") {
+                                  Logger.info("kokoda");
+                                  await btn.click();
+                                }
+                              }
+                            }
+                          });
+                        } else {
+                          Logger.info("inner:" + text);
                         }
                       }
-                    }).catch((a)=>{
-                      Logger.info(a+":warning")
+                    }).catch((a) => {
+                      Logger.info(a + ":warning");
                     });
                     //
                     await newPage.waitForSelector("#password", {
                       visible: true,
                       timeout: 15000,
                     }).then(async () => {
-                      await wait(1)
+                      await wait(1);
                       await newPage.type("#password", yahoo_pass);
-                      await wait(1)
+                      await wait(1);
                       const div = await newPage.$(
                         "div.login.ar-button_button_J2jv2.ar-button_medium_1i9SB.ar-button_normal_1m_gx.ar-button_fullwidth_19rcY",
                       );
