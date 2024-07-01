@@ -143,6 +143,7 @@ class TableMaker {
         const val = await btn.evaluate((x) => x.getAttribute("alt"));
         if (val === "くじをひく") {
           await btn.click();
+          await wait(4);
           return true;
         } else if (val === "明日も参加してね") {
           Logger.info("already gamed");
@@ -200,8 +201,6 @@ class TableMaker {
     if (items != null) {
       for (const item of items) {
         const list: string[] = await this.createPageList(browser);
-        Logger.info(list);
-
         await item.click();
         await wait(2);
 
@@ -215,7 +214,7 @@ class TableMaker {
         if (newPage != null) {
           const flg = await this.loginIfNeed(newPage);
           if (flg) {
-            Logger.info("playgame");
+            Logger.info("playgame:" + await newPage.title());
             await this.playGame(newPage);
           }
           await newPage.close();
